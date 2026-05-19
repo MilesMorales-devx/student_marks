@@ -133,26 +133,32 @@ header p {
     display: block;
 }
 
-.input-group {
-    display: flex;
-    flex-direction: column;
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
     margin-bottom: 24px;
 }
 
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
 .input-group label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: var(--text-light);
 }
 
 .input-group input {
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 12px;
     color: white;
-    font-size: 16px;
+    font-size: 15px;
     outline: none;
     transition: all 0.3s ease;
 }

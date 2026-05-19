@@ -19,38 +19,53 @@ except:
 @app.route('/', methods=['GET', 'POST'])
 def index():
     prediction = None
-    hours = None
+    form_data = {'study': '', 'sleep': '', 'attendance': '', 'prev': ''}
     error = None
     plot_url = None
     
     if request.method == 'POST':
-        hours_str = request.form.get('hours')
+        form_data['study'] = request.form.get('study')
+        form_data['sleep'] = request.form.get('sleep')
+        form_data['attendance'] = request.form.get('attendance')
+        form_data['prev'] = request.form.get('prev')
+        
         try:
-            hours = float(hours_str)
-            if hours < 0 or hours > 24:
-                error = "Please enter a logical number of hours (0-24)."
+            study = float(form_data['study'])
+            sleep = float(form_data['sleep'])
+            attendance = float(form_data['attendance'])
+            prev = float(form_data['prev'])
+            
+            # Basic validation
+            if not (0 <= study <= 24 and 0 <= sleep <= 24 and 0 <= attendance <= 100 and 0 <= prev <= 100):
+                error = "Please enter logical values (Hours: 0-24, Percentages: 0-100)."
             elif model is not None:
-                pred = model.predict(np.array([[hours]]))[0]
+                # Predict
+                features = np.array([[study, sleep, attendance, prev]])
+                pred = model.predict(features)[0]
                 prediction = round(np.clip(pred, 0, 100), 2)
                 
-                # Generate dynamic plot
+                # Generate dynamic personalized 2D plot (Study Hours vs Marks)
                 plt.figure(figsize=(8, 4.5))
-                # Plot the regression line
-                x_range = np.linspace(0, max(15, hours + 2), 100)
-                y_range = model.coef_[0] * x_range + model.intercept_
                 
-                plt.plot(x_range, y_range, color='#6366f1', linewidth=2, label='Regression Line')
-                plt.scatter([hours], [prediction], color='#ef4444', s=150, zorder=5, edgecolors='white', linewidth=2, label='Your Prediction')
-                plt.axvline(x=hours, color='gray', linestyle='--', alpha=0.4)
+                # Calculate the personalized intercept (holding sleep, attendance, prev constant)
+                # Equation: y = m1*study + m2*sleep + m3*att + m4*prev + b
+                # y = m1*study + (m2*sleep + m3*att + m4*prev + b)
+                personalized_intercept = (model.coef_[1] * sleep) + (model.coef_[2] * attendance) + (model.coef_[3] * prev) + model.intercept_
+                m1 = model.coef_[0]
+                
+                x_range = np.linspace(0, max(15, study + 2), 100)
+                y_range = m1 * x_range + personalized_intercept
+                
+                plt.plot(x_range, y_range, color='#6366f1', linewidth=2, label='Personalized Trend')
+                plt.scatter([study], [prediction], color='#ef4444', s=150, zorder=5, edgecolors='white', linewidth=2, label='Your Prediction')
+                plt.axvline(x=study, color='gray', linestyle='--', alpha=0.4)
                 plt.axhline(y=prediction, color='gray', linestyle='--', alpha=0.4)
                 
-                # Set text color to white for dark theme
-                plt.title('Your Prediction Visualization', color='white', fontsize=14, pad=10)
-                plt.xlabel('Hours Studied', color='white')
+                plt.title('How Study Hours Affect Your Score', color='white', fontsize=14, pad=10)
+                plt.xlabel('Study Hours', color='white')
                 plt.ylabel('Predicted Marks', color='white')
                 plt.tick_params(colors='white')
                 
-                # Legend with transparent background
                 legend = plt.legend(facecolor='#1e293b', edgecolor='none')
                 for text in legend.get_texts():
                     text.set_color('white')
@@ -58,7 +73,6 @@ def index():
                 plt.grid(True, linestyle='--', alpha=0.2)
                 plt.tight_layout()
                 
-                # Save plot to base64 string
                 img = io.BytesIO()
                 plt.savefig(img, format='png', transparent=True, dpi=120)
                 img.seek(0)
@@ -68,9 +82,9 @@ def index():
             else:
                 error = "Model not found. Please train the model first."
         except ValueError:
-            error = "Please enter a valid number."
+            error = "Please enter valid numbers for all fields."
             
-    return render_template('index.html', prediction=prediction, hours=hours, error=error, plot_url=plot_url)
+    return render_template('index.html', prediction=prediction, form_data=form_data, error=error, plot_url=plot_url)
 
 if __name__ == '__main__':
     # Run the app on all interfaces to make sure it's accessible

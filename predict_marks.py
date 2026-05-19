@@ -10,21 +10,32 @@ def main():
     print("Generating synthetic dataset...")
     # 1. Create a synthetic dataset
     np.random.seed(42)
-    # 25 students, studying between 1 and 10 hours
-    hours = np.linspace(1, 10, 25) 
+    n_students = 100
     
-    # Suppose the relationship is: Marks = 5 + 9 * hours + noise
-    noise = np.random.normal(0, 5, size=len(hours))
-    marks = 5 + 9 * hours + noise
+    # Features
+    study_hours = np.random.uniform(1, 10, n_students)
+    sleep_hours = np.random.uniform(4, 10, n_students)
+    attendance_pct = np.random.uniform(50, 100, n_students)
+    prev_grade = np.random.uniform(40, 100, n_students)
+    
+    # Suppose the relationship is: Marks = 5 + 3*study + 1.5*sleep + 0.2*attendance + 0.35*prev + noise
+    noise = np.random.normal(0, 4, size=n_students)
+    marks = 5 + (3.0 * study_hours) + (1.5 * sleep_hours) + (0.2 * attendance_pct) + (0.35 * prev_grade) + noise
     # Clip marks to a maximum of 100
     marks = np.clip(marks, 0, 100)
 
-    data = pd.DataFrame({'Hours': hours, 'Marks': marks})
+    data = pd.DataFrame({
+        'Study_Hours': study_hours,
+        'Sleep_Hours': sleep_hours,
+        'Attendance_Pct': attendance_pct,
+        'Prev_Grade': prev_grade,
+        'Marks': marks
+    })
     data.to_csv('student_scores.csv', index=False)
     print("Dataset saved as 'student_scores.csv'")
 
     # 2. Split dataset into training and testing sets
-    X = data[['Hours']].values
+    X = data[['Study_Hours', 'Sleep_Hours', 'Attendance_Pct', 'Prev_Grade']].values
     y = data['Marks'].values
 
     # 80% for training, 20% for testing
@@ -40,7 +51,7 @@ def main():
 
     # 5. Evaluate the model
     r2 = r2_score(y_test, y_pred)
-    print(f"Model Summary:\n  Coefficient (Slope/m): {model.coef_[0]:.2f}")
+    print(f"Model Summary:\n  Coefficients: {model.coef_}")
     print(f"  Intercept (b): {model.intercept_:.2f}")
     print(f"  R2 Score: {r2:.4f}")
 
@@ -48,22 +59,17 @@ def main():
     print("Generating visualization...")
     plt.figure(figsize=(10, 6))
 
-    # Plot training data
-    plt.scatter(X_train, y_train, color='blue', label='Training Data', alpha=0.7)
+    # Plot Actual vs Predicted
+    plt.scatter(y_test, y_pred, color='purple', s=80, alpha=0.7, label='Predictions')
+    
+    # Perfect prediction line
+    min_val = min(min(y_test), min(y_pred))
+    max_val = max(max(y_test), max(y_pred))
+    plt.plot([min_val, max_val], [min_val, max_val], color='red', linestyle='--', label='Perfect Prediction (y=x)')
 
-    # Plot testing data
-    plt.scatter(X_test, y_test, color='green', label='Testing Data (Actual)', s=80, marker='x')
-
-    # Plot predictions for testing data
-    plt.scatter(X_test, y_pred, color='purple', label='Testing Data (Predicted)', s=80, marker='+')
-
-    # Plot regression line
-    line = model.coef_ * X + model.intercept_
-    plt.plot(X, line, color='red', label='Regression Line (y = mx + b)')
-
-    plt.title('Student Marks vs Study Hours', fontsize=14)
-    plt.xlabel('Study Hours', fontsize=12)
-    plt.ylabel('Marks Obtained', fontsize=12)
+    plt.title('Actual vs Predicted Marks (Multiple Regression)', fontsize=14)
+    plt.xlabel('Actual Marks', fontsize=12)
+    plt.ylabel('Predicted Marks', fontsize=12)
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
     
