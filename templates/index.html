@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Marks Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+        <div class="blob blob3"></div>
+    </div>
+    
+    <div class="container">
+        <div class="glass-card">
+            <header>
+                <h1>AI Marks Predictor</h1>
+                <p>Estimate your final score based on study hours.</p>
+            </header>
+
+            <div class="graph-section">
+                {% if plot_url %}
+                <img src="data:image/png;base64,{{ plot_url }}" alt="Dynamic Regression Plot" class="graph-image">
+                {% else %}
+                <img src="{{ url_for('static', filename='regression_plot.png') }}" alt="Regression Plot" class="graph-image">
+                {% endif %}
+            </div>
+            
+            <form method="POST" action="/" class="predict-form">
+                <div class="input-group">
+                    <label for="hours">Hours Studied</label>
+                    <input type="number" step="0.1" name="hours" id="hours" placeholder="e.g., 5.5" required 
+                           value="{{ hours if hours is not none else '' }}">
+                </div>
+                <button type="submit" class="predict-btn">
+                    <span>Predict My Score</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </form>
+            
+            {% if error %}
+            <div class="result error">
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+            
+            {% if prediction is not none %}
+            <div class="result success">
+                <h3>Predicted Score</h3>
+                <div class="score-display">
+                    <span class="score">{{ prediction }}</span>
+                    <span class="max-score">/ 100</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ prediction }}%"></div>
+                </div>
+                <p class="feedback">
+                    {% if prediction >= 90 %} Excellent! Keep up the great work!
+                    {% elif prediction >= 75 %} Good job! You're on the right track.
+                    {% elif prediction >= 50 %} You can do it! A bit more study time could help.
+                    {% else %} It might be time to hit the books a little harder.
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
